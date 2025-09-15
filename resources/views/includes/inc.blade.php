@@ -155,7 +155,7 @@
                     </button>
 
                     <!-- Cart - Hidden on mobile, shown on md -->
-                    <button class="hidden md:block relative p-2 text-gray-600 hover:text-primary">
+                    <button id="cart-button" class="hidden md:block relative p-2 text-gray-600 hover:text-primary">
                         <i class="fas fa-shopping-cart text-xl"></i>
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
                     </button>
@@ -199,6 +199,65 @@
             </div>
         </div>
     </header>
+
+    <!-- Cart Sidebar -->
+    <div class="fixed inset-0 overflow-hidden z-50" style="display: none;">
+        <div id="overlay" class="overlay fixed inset-0 bg-black bg-opacity-50"></div>
+        
+        <div id="cart-sidebar" class="cart-sidebar fixed top-0 right-0 max-w-md w-full h-full bg-white shadow-xl flex flex-col">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Your Shopping Cart</h2>
+                <button id="close-cart" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Cart Items -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div id="cart-items">
+                </div>
+            </div>
+            
+            <!-- Cart Summary -->
+            <div class="border-t border-gray-200 p-4 bg-gray-50">
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Subtotal</span>
+                        <span id="subtotal" class="font-medium">$1,018.98</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Shipping</span>
+                        <span class="font-medium text-green-600">Free</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Tax</span>
+                        <span id="tax" class="font-medium">$81.52</span>
+                    </div>
+                    <div class="flex justify-between pt-2 border-t border-gray-300">
+                        <span class="text-lg font-bold">Total</span>
+                        <span id="total" class="text-lg font-bold text-blue-600">$1,100.50</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex items-center">
+                        <input type="text" id="promo-code" placeholder="Enter promo code" class="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500">
+                        <button id="apply-promo" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-r-md hover:bg-gray-300 transition-colors">Apply</button>
+                    </div>
+                    <p id="promo-message" class="text-sm mt-1 text-green-600 hidden">Promo code applied successfully!</p>
+                </div>
+                
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium mb-3 transition-colors">
+                    Proceed to Checkout
+                </button>
+                
+                <div class="text-center">
+                    <a href="#" class="text-blue-600 hover:text-blue-800 text-sm transition-colors">Continue shopping</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     @yield('content')
     <footer class="bg-white py-6 md:py-12">
@@ -503,6 +562,214 @@
             </p>
         </div>
     </div>
+
+    <script>
+        // Cart data
+        const cartItems = [
+            {
+                id: 1,
+                name: "Orthopedic Memory Foam Mattress",
+                description: "Queen Size",
+                price: 899.00,
+                quantity: 1,
+                image: "https://images.unsplash.com/photo-1517705008128-361805f42e86?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+            },
+            {
+                id: 2,
+                name: "Memory Foam Pillow",
+                description: "Standard",
+                price: 59.99,
+                quantity: 2,
+                image: "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
+            }
+        ];
+
+        // DOM elements
+        const cartButton = document.getElementById('cart-button');
+        const viewCartBtn = document.getElementById('view-cart-btn');
+        const closeCart = document.getElementById('close-cart');
+        const overlay = document.getElementById('overlay');
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const cartContainer = document.querySelector('.fixed.inset-0.overflow-hidden.z-50');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartCount = document.getElementById('cart-count');
+        const itemCount = document.getElementById('item-count');
+        const subtotalEl = document.getElementById('subtotal');
+        const taxEl = document.getElementById('tax');
+        const totalEl = document.getElementById('total');
+        const applyPromo = document.getElementById('apply-promo');
+        const promoMessage = document.getElementById('promo-message');
+
+        // Initialize cart
+        function initCart() {
+            updateCartDisplay();
+            renderCartItems();
+        }
+
+        // Render cart items
+        function renderCartItems() {
+            cartItemsContainer.innerHTML = '';
+            
+            cartItems.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'cart-item border-b pb-4 mb-4';
+                itemEl.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-20 h-20 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h3 class="text-sm font-medium text-gray-800">${item.name}</h3>
+                            <p class="text-sm text-gray-500">${item.description}</p>
+                            <div class="flex justify-between items-center mt-2">
+                                <div class="flex items-center border rounded-md">
+                                    <button class="quantity-btn px-2 py-1 text-gray-600 decrease-qty" data-id="${item.id}">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <span class="px-2 py-1 quantity">${item.quantity}</span>
+                                    <button class="quantity-btn px-2 py-1 text-gray-600 increase-qty" data-id="${item.id}">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium text-gray-800 item-total">$${(item.price * item.quantity).toFixed(2)}</span>
+                                    <button class="remove-btn ml-3 text-gray-400 hover:text-red-500" data-id="${item.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                cartItemsContainer.appendChild(itemEl);
+            });
+            
+            // Add event listeners to quantity buttons
+            document.querySelectorAll('.increase-qty').forEach(button => {
+                button.addEventListener('click', () => {
+                    const id = parseInt(button.getAttribute('data-id'));
+                    increaseQuantity(id);
+                });
+            });
+            
+            document.querySelectorAll('.decrease-qty').forEach(button => {
+                button.addEventListener('click', () => {
+                    const id = parseInt(button.getAttribute('data-id'));
+                    decreaseQuantity(id);
+                });
+            });
+            
+            document.querySelectorAll('.remove-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const id = parseInt(button.getAttribute('data-id'));
+                    removeItem(id);
+                });
+            });
+        }
+
+        // Update cart totals and display
+        function updateCartDisplay() {
+            // Calculate totals
+            const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.08;
+            const total = subtotal + tax;
+            
+            // Update DOM
+            subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+            taxEl.textContent = `$${tax.toFixed(2)}`;
+            totalEl.textContent = `$${total.toFixed(2)}`;
+            
+            // Update item count
+            const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+            cartCount.textContent = totalItems;
+            itemCount.textContent = totalItems;
+        }
+
+        // Increase item quantity
+        function increaseQuantity(id) {
+            const item = cartItems.find(item => item.id === id);
+            if (item) {
+                item.quantity++;
+                updateCartDisplay();
+                renderCartItems();
+            }
+        }
+
+        // Decrease item quantity
+        function decreaseQuantity(id) {
+            const item = cartItems.find(item => item.id === id);
+            if (item && item.quantity > 1) {
+                item.quantity--;
+                updateCartDisplay();
+                renderCartItems();
+            }
+        }
+
+        // Remove item from cart
+        function removeItem(id) {
+            const index = cartItems.findIndex(item => item.id === id);
+            if (index !== -1) {
+                cartItems.splice(index, 1);
+                updateCartDisplay();
+                renderCartItems();
+                
+                // Close cart if empty
+                if (cartItems.length === 0) {
+                    setTimeout(closeCartSidebar, 300);
+                }
+            }
+        }
+
+        // Open cart sidebar
+        function openCart() {
+            cartContainer.style.display = 'block';
+            setTimeout(() => {
+                cartSidebar.classList.add('open');
+                overlay.classList.add('open');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close cart sidebar
+        function closeCartSidebar() {
+            cartSidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            setTimeout(() => {
+                cartContainer.style.display = 'none';
+            }, 300);
+            document.body.style.overflow = 'auto';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', initCart);
+        
+        cartButton.addEventListener('click', openCart);
+        viewCartBtn.addEventListener('click', openCart);
+        closeCart.addEventListener('click', closeCartSidebar);
+        overlay.addEventListener('click', closeCartSidebar);
+        
+        // Promo code application
+        applyPromo.addEventListener('click', () => {
+            const promoCode = document.getElementById('promo-code').value;
+            if (promoCode.toUpperCase() === 'SLEEP10') {
+                // Apply 10% discount
+                const currentTotal = parseFloat(totalEl.textContent.replace('$', ''));
+                const discountedTotal = currentTotal * 0.9;
+                totalEl.textContent = `$${discountedTotal.toFixed(2)}`;
+                promoMessage.classList.remove('hidden');
+                
+                // Change promo button
+                applyPromo.textContent = 'Applied';
+                applyPromo.classList.add('bg-green-500', 'text-white');
+                applyPromo.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            }
+        });
+        
+        // Close cart with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeCartSidebar();
+        });
+    </script>
     <script src="{{ asset('js/main.js') }}"></script>
 </body>
 
